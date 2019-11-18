@@ -15,9 +15,13 @@ class Attr:
 class DataGenerator:
     def __init__(self):
         self.attrs = list()
+        self.rule = dict()
 
     def add_attr(self, attr_):
         self.attrs.append(attr_)
+
+    def set_right_rule(self, rule):
+        self.rule = rule
 
     def generate(self, size_, output=None):
         dataset_ = list()
@@ -25,15 +29,24 @@ class DataGenerator:
             temp = dict()
             for a in self.attrs:
                 temp[a.name] = a.random()
+            if self.rule:
+                predict = "True"
+                for name, val in self.rule.items():
+                    if temp[name] != val:
+                        predict = "False"
+                        break
+                temp["Predict Class"] = predict
             dataset_.append(temp)
         if output:
             attr_name = [i.name for i in self.attrs]
             with open(output, "w", newline="") as f:
-                writer = csv.DictWriter(f, fieldnames=["Tid"] + attr_name)
+                label = attr_name
+                if self.rule:
+                    label += ["Predict Class"]
+                writer = csv.DictWriter(f, fieldnames=label)
                 writer.writeheader()
                 for i in range(len(dataset_)):
                     temp = dict(**dataset_[i])
-                    temp["Tid"] = i + 1
                     writer.writerow(temp)
         return dataset_
 
@@ -43,8 +56,6 @@ if __name__ == '__main__':
     attrs = [
         Attr("License", {"True": 3, "False": 1}),
         Attr("Drunk", {"True": 1, "False": 3}),
-        Attr("Tired ", {"True": 1, "False": 3}),
-        Attr("Health ", {"True": 3, "False": 1}),
         Attr("Glasses", {"True": 1, "False": 1}),
         Attr("Clothes Color", {"Red": 1, "Blue": 1, "Green": 1, "Yellow": 1, "Purple": 1, "White": 1, "Black": 1}),
         Attr("Weight", {"Thin": 1, "Normal": 1, "Fat": 1}),
@@ -61,9 +72,12 @@ if __name__ == '__main__':
         Attr("Use Gmail", {"True": 1, "False": 1}),
         Attr("Foreigner", {"True": 1, "False": 1}),
         Attr("Use Apple", {"True": 1, "False": 1}),
+        Attr("Tired", {"True": 1, "False": 3}),
+        Attr("Health", {"True": 3, "False": 1}),
     ]
 
     gen = DataGenerator()
     for attr in attrs:
         gen.add_attr(attr)
+    gen.set_right_rule({"License": "True", "Drunk": "False", "Tired": "False", "Health": "True"})
     dataset = gen.generate(500, output="dataset.csv")
